@@ -1,0 +1,348 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ receipt.receipt_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1e293b;
+            font-size: 12px;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 28%;
+            left: 18%;
+            width: 360px;
+            opacity: 0.06;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 2;
+            border: 1px solid #dbe4ee;
+            padding: 24px;
+            border-radius: 10px;
+            background: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header td {
+            vertical-align: top;
+        }
+
+        .logo {
+            width: 90px;
+            max-height: 90px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .tagline {
+            color: #64748b;
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
+
+        .company-meta {
+            font-size: 11px;
+            color: #475569;
+        }
+
+        .title-box {
+            text-align: right;
+        }
+
+        .title-box h1 {
+            margin: 0;
+            font-size: 30px;
+            color: #0f172a;
+            letter-spacing: 1px;
+        }
+
+        .meta {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .spacer {
+            height: 18px;
+        }
+
+        .box {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            min-height: 96px;
+        }
+
+        .box-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .payer-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .items-table {
+            margin-top: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .items-table th {
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 11px;
+            padding: 10px 8px;
+            text-align: left;
+        }
+
+        .items-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .summary {
+            margin-top: 14px;
+            width: 44%;
+            margin-left: auto;
+        }
+
+        .summary td {
+            padding: 6px 0;
+        }
+
+        .summary .label {
+            text-align: left;
+            color: #475569;
+        }
+
+        .summary .value {
+            text-align: right;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .summary .grand-total td {
+            border-top: 1px solid #cbd5e1;
+            padding-top: 10px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .notes-box {
+            margin-top: 16px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .signature-box {
+            margin-top: 24px;
+            width: 220px;
+            margin-left: auto;
+            text-align: center;
+        }
+
+        .signature-image {
+            max-width: 180px;
+            max-height: 80px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #94a3b8;
+            padding-top: 6px;
+            font-size: 11px;
+            color: #475569;
+        }
+
+        .footer {
+            margin-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    {% if company.logo %}
+        <img src="{{ company.logo.url }}" alt="Watermark" class="watermark">
+    {% endif %}
+
+    <div class="wrapper">
+        <table class="header">
+            <tr>
+                <td style="width: 65%;">
+                    {% if company.logo %}
+                        <img src="{{ company.logo.url }}" alt="Logo" class="logo">
+                    {% endif %}
+                    <div class="company-name">{{ company.company_name }}</div>
+                    {% if company.tagline %}
+                        <div class="tagline">{{ company.tagline }}</div>
+                    {% endif %}
+                    <div class="company-meta">
+                        {% if company.address %}{{ company.address }}<br>{% endif %}
+                        {% if company.phone_number %}Tel: {{ company.phone_number }}<br>{% endif %}
+                        {% if company.email %}Email: {{ company.email }}<br>{% endif %}
+                        {% if company.website_url %}Website: {{ company.website_url }}{% endif %}
+                    </div>
+                </td>
+                <td style="width: 35%;" class="title-box">
+                    <h1>PAYMENT RECEIPT</h1>
+                    <div class="meta">
+                        <strong>Receipt No:</strong> {{ receipt.receipt_number }}<br>
+                        <strong>Payment Date:</strong> {{ receipt.payment_date|date:"d M Y" }}<br>
+                        {% if receipt.invoice %}
+                            <strong>Invoice No:</strong> {{ receipt.invoice.invoice_number }}
+                        {% endif %}
+                    </div>
+                    <div class="badge">{{ receipt.status }}</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="spacer"></div>
+
+        <table>
+            <tr>
+                <td style="width: 50%; padding-right: 8px;">
+                    <div class="box">
+                        <div class="box-title">Received From</div>
+                        <div class="payer-name">{{ receipt.received_from }}</div>
+                        {% if receipt.payer_address %}<div>{{ receipt.payer_address }}</div>{% endif %}
+                        {% if receipt.payer_phone %}<div>{{ receipt.payer_phone }}</div>{% endif %}
+                        {% if receipt.payer_email %}<div>{{ receipt.payer_email }}</div>{% endif %}
+                    </div>
+                </td>
+                <td style="width: 50%; padding-left: 8px;">
+                    <div class="box">
+                        <div class="box-title">Payment Info</div>
+                        <div><strong>Currency:</strong> {{ receipt.currency }}</div>
+                        <div><strong>Method:</strong> {{ receipt.get_payment_method_display }}</div>
+                        {% if receipt.reference_number %}
+                            <div><strong>Reference:</strong> {{ receipt.reference_number }}</div>
+                        {% endif %}
+                        <div><strong>Amount Received:</strong> {{ receipt.currency }} {{ receipt.amount_received|floatformat:2|intcomma }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="spacer"></div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 70%;">Description</th>
+                    <th style="width: 30%;" class="text-right">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in receipt.items.all %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td class="text-right">{{ receipt.currency }} {{ item.amount|floatformat:2|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td>
+                        Payment received
+                        {% if receipt.invoice %}
+                            for invoice {{ receipt.invoice.invoice_number }}
+                        {% endif %}
+                    </td>
+                    <td class="text-right">{{ receipt.currency }} {{ receipt.amount_received|floatformat:2|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <table class="summary">
+            {% if receipt.invoice %}
+            <tr>
+                <td class="label">Invoice Total</td>
+                <td class="value">{{ receipt.currency }} {{ receipt.invoice_total|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="label">Amount Received</td>
+                <td class="value">{{ receipt.currency }} {{ receipt.amount_received|floatformat:2|intcomma }}</td>
+            </tr>
+            {% if receipt.invoice %}
+            <tr class="grand-total">
+                <td>Remaining Balance</td>
+                <td class="text-right">{{ receipt.currency }} {{ receipt.remaining_balance|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endif %}
+        </table>
+
+        {% if receipt.notes %}
+        <div class="notes-box">
+            <strong>Notes</strong><br>
+            {{ receipt.notes }}
+        </div>
+        {% endif %}
+
+        {% if company.authorized_signature %}
+        <div class="signature-box">
+            <img src="{{ company.authorized_signature.url }}" alt="Signature" class="signature-image">
+            <div class="signature-line">Authorized Signature</div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            Thank you for your payment to {{ company.company_name }}.
+        </div>
+    </div>
+</body>
+</html>
