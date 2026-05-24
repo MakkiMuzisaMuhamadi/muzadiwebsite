@@ -6,8 +6,6 @@ from .models import (
     HeroSlide,
     IntroPoint,
     IntroStatCard,
-    Invoice,
-    InvoiceItem,
     Service,
     SoftwareProduct,
     FeatureItem,
@@ -16,10 +14,17 @@ from .models import (
     ClientLogo,
     FooterLinkGroup,
     FooterLink,
-    Receipt,
-    ReceiptItem,
+
+    # SHOP MODELS
+    ShopInvoice,
+    ShopInvoiceItem,
+    ShopReceipt,
 )
 
+
+# =========================================================
+# INLINE MODELS
+# =========================================================
 
 class PricingPlanFeatureInline(admin.TabularInline):
     model = PricingPlanFeature
@@ -31,39 +36,76 @@ class FooterLinkInline(admin.TabularInline):
     extra = 1
 
 
-class ReceiptItemInline(admin.TabularInline):
-    model = ReceiptItem
+class ShopInvoiceItemInline(admin.TabularInline):
+    model = ShopInvoiceItem
     extra = 1
 
+    fields = (
+        "category",
+        "product_name",
+        "description",
+        "serial_number",
+        "quantity",
+        "unit_price",
+        "warranty",
+        "line_total_display",
+    )
+
+    readonly_fields = ("line_total_display",)
+
+    def line_total_display(self, obj):
+        if obj.pk:
+            return f"{obj.line_total:,.0f}"
+        return "0"
+    line_total_display.short_description = "Amount"
+
+
+# =========================================================
+# GENERAL WEBSITE ADMIN
+# =========================================================
 
 @admin.register(HomePageSetting)
 class HomePageSettingAdmin(admin.ModelAdmin):
+
     fieldsets = (
-        ("SEO & Branding", {
+
+        ("Company Branding", {
             "fields": (
-                "site_title",
-                "meta_keywords",
-                "meta_description",
-                "meta_author",
                 "company_name",
                 "tagline",
                 "logo",
                 "favicon",
             )
         }),
-        ("Contact", {
+
+        ("Contact Information", {
             "fields": (
                 "phone_number",
                 "whatsapp_number",
                 "email",
                 "website_url",
                 "address",
+            )
+        }),
+
+        ("Social Media", {
+            "fields": (
                 "facebook_url",
                 "instagram_url",
                 "linkedin_url",
             )
         }),
-        ("Intro", {
+
+        ("SEO", {
+            "fields": (
+                "site_title",
+                "meta_keywords",
+                "meta_description",
+                "meta_author",
+            )
+        }),
+
+        ("Homepage Intro", {
             "fields": (
                 "intro_badge",
                 "intro_heading",
@@ -71,18 +113,21 @@ class HomePageSettingAdmin(admin.ModelAdmin):
                 "intro_text_2",
             )
         }),
+
         ("Services", {
             "fields": (
                 "services_title",
                 "services_subtitle",
             )
         }),
+
         ("Products", {
             "fields": (
                 "products_title",
                 "products_subtitle",
             )
         }),
+
         ("Features", {
             "fields": (
                 "features_title",
@@ -90,12 +135,14 @@ class HomePageSettingAdmin(admin.ModelAdmin):
                 "features_image",
             )
         }),
+
         ("Pricing", {
             "fields": (
                 "pricing_title",
                 "pricing_subtitle",
             )
         }),
+
         ("Clients", {
             "fields": (
                 "clients_title",
@@ -104,7 +151,8 @@ class HomePageSettingAdmin(admin.ModelAdmin):
                 "clients_note",
             )
         }),
-        ("CTA", {
+
+        ("Call To Action", {
             "fields": (
                 "cta_badge",
                 "cta_heading",
@@ -114,12 +162,14 @@ class HomePageSettingAdmin(admin.ModelAdmin):
                 "cta_whatsapp_text",
             )
         }),
+
         ("Footer", {
             "fields": (
                 "footer_about",
                 "footer_copyright",
             )
         }),
+
     )
 
 
@@ -149,220 +199,398 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(SoftwareProduct)
 class SoftwareProductAdmin(admin.ModelAdmin):
-    list_display = ("title", "tag", "order", "is_active")
-    list_editable = ("order", "is_active")
+    list_display = (
+        "title",
+        "tag",
+        "order",
+        "is_active"
+    )
+
+    list_editable = (
+        "order",
+        "is_active"
+    )
 
 
 @admin.register(FeatureItem)
 class FeatureItemAdmin(admin.ModelAdmin):
-    list_display = ("title", "order", "is_active")
-    list_editable = ("order", "is_active")
+    list_display = (
+        "title",
+        "order",
+        "is_active"
+    )
+
+    list_editable = (
+        "order",
+        "is_active"
+    )
 
 
 @admin.register(PricingPlan)
 class PricingPlanAdmin(admin.ModelAdmin):
-    list_display = ("title", "price_text", "is_featured", "order", "is_active")
-    list_editable = ("is_featured", "order", "is_active")
+
+    list_display = (
+        "title",
+        "price_text",
+        "is_featured",
+        "order",
+        "is_active"
+    )
+
+    list_editable = (
+        "is_featured",
+        "order",
+        "is_active"
+    )
+
     inlines = [PricingPlanFeatureInline]
 
 
 @admin.register(ClientLogo)
 class ClientLogoAdmin(admin.ModelAdmin):
-    list_display = ("name", "row", "order", "is_active")
-    list_editable = ("row", "order", "is_active")
+
+    list_display = (
+        "name",
+        "row",
+        "order",
+        "is_active"
+    )
+
+    list_editable = (
+        "row",
+        "order",
+        "is_active"
+    )
 
 
 @admin.register(FooterLinkGroup)
 class FooterLinkGroupAdmin(admin.ModelAdmin):
-    list_display = ("title", "order", "is_active")
-    list_editable = ("order", "is_active")
+
+    list_display = (
+        "title",
+        "order",
+        "is_active"
+    )
+
+    list_editable = (
+        "order",
+        "is_active"
+    )
+
     inlines = [FooterLinkInline]
 
 
-class InvoiceItemInline(admin.TabularInline):
-    model = InvoiceItem
-    extra = 1
+# =========================================================
+# SHOP INVOICE ADMIN
+# =========================================================
 
-@admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
+@admin.register(ShopInvoice)
+class ShopInvoiceAdmin(admin.ModelAdmin):
+
     list_display = (
         "invoice_number",
-        "client_name",
-        "issued_date",
-        "due_date",
-        "total_amount_display",
-        "amount_paid_display",
+        "customer_name",
+        "invoice_date",
+        "total_display",
+        "paid_display",
         "balance_display",
-        "status",
-        "download_pdf_link",
+        "status_badge",
+        "download_pdf",
     )
-    list_filter = ("status", "issued_date", "due_date", "currency")
-    search_fields = ("invoice_number", "client_name", "client_email", "client_phone")
-    inlines = [InvoiceItemInline]
-    readonly_fields = ("invoice_number", "pdf_preview_link")
+
+    list_filter = (
+        "status",
+        "invoice_date",
+        "currency",
+    )
+
+    search_fields = (
+        "invoice_number",
+        "customer_name",
+        "customer_phone",
+        "customer_email",
+    )
+
+    readonly_fields = (
+        "invoice_number",
+        "subtotal_display",
+        "tax_display",
+        "total_display_readonly",
+        "balance_display_readonly",
+        "pdf_preview",
+    )
+
+    autocomplete_fields = []
+
+    inlines = [ShopInvoiceItemInline]
 
     fieldsets = (
-        ("Invoice Info", {
+
+        ("Invoice Information", {
             "fields": (
                 "invoice_number",
+                "invoice_date",
                 "status",
-                "issued_date",
-                "due_date",
                 "currency",
             )
         }),
-        ("Client Details", {
+
+        ("Customer Information", {
             "fields": (
-                "client_name",
-                "client_email",
-                "client_phone",
-                "client_address",
+                "customer_name",
+                "customer_phone",
+                "customer_email",
+                "customer_address",
             )
         }),
-        ("Payment Details", {
+
+        ("Payment Summary", {
             "fields": (
                 "tax_percentage",
                 "discount_amount",
                 "amount_paid",
+                "subtotal_display",
+                "tax_display",
+                "total_display_readonly",
+                "balance_display_readonly",
             )
         }),
-        ("Extra", {
+
+        ("Extra Information", {
             "fields": (
                 "notes",
-                "terms",
-                "pdf_preview_link",
+                "pdf_preview",
             )
         }),
+
     )
 
-    def total_amount_display(self, obj):
-        return f"{obj.currency} {obj.total_amount:,.2f}"
-    total_amount_display.short_description = "Total"
+    # =======================================
+    # DISPLAY METHODS
+    # =======================================
 
-    def amount_paid_display(self, obj):
-        return f"{obj.currency} {obj.amount_paid:,.2f}"
-    amount_paid_display.short_description = "Paid"
+    def total_display(self, obj):
+        return f"{obj.currency} {obj.total_amount:,.0f}"
+    total_display.short_description = "Total"
+
+    def paid_display(self, obj):
+        return f"{obj.currency} {obj.amount_paid:,.0f}"
+    paid_display.short_description = "Paid"
 
     def balance_display(self, obj):
-        return f"{obj.currency} {obj.balance:,.2f}"
+        return f"{obj.currency} {obj.balance:,.0f}"
     balance_display.short_description = "Balance"
 
-    def download_pdf_link(self, obj):
+    def subtotal_display(self, obj):
+        return f"{obj.currency} {obj.subtotal:,.0f}"
+    subtotal_display.short_description = "Subtotal"
+
+    def tax_display(self, obj):
+        return f"{obj.currency} {obj.tax_amount:,.0f}"
+    tax_display.short_description = "Tax Amount"
+
+    def total_display_readonly(self, obj):
+        return f"{obj.currency} {obj.total_amount:,.0f}"
+    total_display_readonly.short_description = "Grand Total"
+
+    def balance_display_readonly(self, obj):
+        return f"{obj.currency} {obj.balance:,.0f}"
+    balance_display_readonly.short_description = "Remaining Balance"
+
+    # =======================================
+    # STATUS BADGES
+    # =======================================
+
+    def status_badge(self, obj):
+
+        colors = {
+            "PENDING": "#f59e0b",
+            "PARTIAL": "#2563eb",
+            "PAID": "#16a34a",
+            "CANCELLED": "#dc2626",
+        }
+
+        return format_html(
+            '''
+            <span style="
+                background:{};
+                color:white;
+                padding:4px 10px;
+                border-radius:20px;
+                font-size:11px;
+                font-weight:bold;
+            ">
+                {}
+            </span>
+            ''',
+            colors.get(obj.status, "#64748b"),
+            obj.status
+        )
+
+    status_badge.short_description = "Status"
+
+    # =======================================
+    # PDF LINKS
+    # =======================================
+
+    def download_pdf(self, obj):
+
         if obj.pk:
             return format_html(
-                '<a class="button" href="{}" target="_blank">Download PDF</a>',
+                '''
+                <a class="button"
+                   href="{}"
+                   target="_blank">
+
+                   Download PDF
+
+                </a>
+                ''',
                 obj.get_pdf_url()
             )
+
         return "-"
-    download_pdf_link.short_description = "PDF"
 
-    def pdf_preview_link(self, obj):
+    download_pdf.short_description = "PDF"
+
+    def pdf_preview(self, obj):
+
         if obj.pk:
             return format_html(
-                '<a class="button" href="{}" target="_blank">Open / Download Invoice PDF</a>',
+                '''
+                <a class="button"
+                   href="{}"
+                   target="_blank">
+
+                   Open / Download Invoice PDF
+
+                </a>
+                ''',
                 obj.get_pdf_url()
             )
-        return "Save the invoice first to enable PDF download."
-    pdf_preview_link.short_description = "Invoice PDF"
+
+        return "Save invoice first."
+
+    pdf_preview.short_description = "Invoice PDF"
 
 
+# =========================================================
+# SHOP RECEIPT ADMIN
+# =========================================================
 
-class ReceiptItemInline(admin.TabularInline):
-    model = ReceiptItem
-    extra = 1
+@admin.register(ShopReceipt)
+class ShopReceiptAdmin(admin.ModelAdmin):
 
-
-@admin.register(Receipt)
-class ReceiptAdmin(admin.ModelAdmin):
     list_display = (
         "receipt_number",
-        "received_from",
+        "customer_name",
         "invoice",
         "payment_date",
         "payment_method",
-        "amount_received_display",
-        "status",
-        "download_pdf_link",
+        "amount_display",
+        "download_pdf",
     )
-    list_filter = ("status", "payment_date", "payment_method", "currency")
+
+    list_filter = (
+        "payment_method",
+        "payment_date",
+    )
+
     search_fields = (
         "receipt_number",
-        "received_from",
-        "payer_email",
-        "payer_phone",
+        "customer_name",
         "reference_number",
         "invoice__invoice_number",
     )
+
     autocomplete_fields = ("invoice",)
-    inlines = [ReceiptItemInline]
+
     readonly_fields = (
         "receipt_number",
-        "invoice_total_display",
-        "remaining_balance_display",
-        "pdf_preview_link",
+        "pdf_preview",
     )
 
     fieldsets = (
-        ("Receipt Info", {
+
+        ("Receipt Information", {
             "fields": (
                 "receipt_number",
                 "invoice",
-                "status",
                 "payment_date",
                 "payment_method",
                 "reference_number",
-                "currency",
             )
         }),
-        ("Received From", {
+
+        ("Customer Information", {
             "fields": (
-                "received_from",
-                "payer_email",
-                "payer_phone",
-                "payer_address",
+                "customer_name",
             )
         }),
+
         ("Payment", {
             "fields": (
                 "amount_received",
-                "invoice_total_display",
-                "remaining_balance_display",
-            )
-        }),
-        ("Extra", {
-            "fields": (
                 "notes",
-                "pdf_preview_link",
             )
         }),
+
+        ("PDF", {
+            "fields": (
+                "pdf_preview",
+            )
+        }),
+
     )
 
-    def amount_received_display(self, obj):
-        return f"{obj.currency} {obj.amount_received:,.2f}"
-    amount_received_display.short_description = "Amount Received"
+    # =======================================
+    # DISPLAY METHODS
+    # =======================================
 
-    def invoice_total_display(self, obj):
-        return f"{obj.currency} {obj.invoice_total:,.2f}"
-    invoice_total_display.short_description = "Invoice Total"
+    def amount_display(self, obj):
+        return f"UGX {obj.amount_received:,.0f}"
+    amount_display.short_description = "Amount"
 
-    def remaining_balance_display(self, obj):
-        return f"{obj.currency} {obj.remaining_balance:,.2f}"
-    remaining_balance_display.short_description = "Remaining Balance"
+    # =======================================
+    # PDF METHODS
+    # =======================================
 
-    def download_pdf_link(self, obj):
+    def download_pdf(self, obj):
+
         if obj.pk:
             return format_html(
-                '<a class="button" href="{}" target="_blank">Download PDF</a>',
+                '''
+                <a class="button"
+                   href="{}"
+                   target="_blank">
+
+                   Download PDF
+
+                </a>
+                ''',
                 obj.get_pdf_url()
             )
+
         return "-"
-    download_pdf_link.short_description = "PDF"
 
-    def pdf_preview_link(self, obj):
+    download_pdf.short_description = "PDF"
+
+    def pdf_preview(self, obj):
+
         if obj.pk:
             return format_html(
-                '<a class="button" href="{}" target="_blank">Open / Download Receipt PDF</a>',
+                '''
+                <a class="button"
+                   href="{}"
+                   target="_blank">
+
+                   Open / Download Receipt PDF
+
+                </a>
+                ''',
                 obj.get_pdf_url()
             )
-        return "Save the receipt first to enable PDF download."
-    pdf_preview_link.short_description = "Receipt PDF"
+
+        return "Save receipt first."
+
+    pdf_preview.short_description = "Receipt PDF"

@@ -584,3 +584,326 @@ def receipt_post_save(sender, instance, **kwargs):
 def receipt_post_delete(sender, instance, **kwargs):
     if instance.invoice:
         update_invoice_payment_status(instance.invoice)
+
+
+from decimal import Decimal
+from django.db import models
+from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.urls import reverse
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+
+class ShopInvoice(models.Model):
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("PARTIAL", "Partial"),
+        ("PAID", "Paid"),
+        ("CANCELLED", "Cancelled"),
+    ]
+
+    invoice_number = models.CharField(
+        max_length=30,
+        unique=True,
+        blank=True
+    )
+
+    customer_name = models.CharField(max_length=255)
+    customer_phone = models.CharField(max_length=50, blank=True)
+    customer_email = models.EmailField(blank=True, null=True)
+    customer_address = models.TextField(blank=True)
+
+    invoice_date = models.DateField(default=timezone.now)
+
+    currency = models.CharField(
+        max_length=10,
+        default="UGX"
+    )
+
+    tax_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00")
+    )
+
+    discount_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00")
+    )
+
+    amount_paid = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00")
+    )
+
+    notes = models.TextField(blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="PENDING"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.invoice_number
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            self.invoice_number = self.generate_invoice_number()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_invoice_number(cls):
+        today = timezone.now().strftime("%Y%m%d")
+
+        last_invoice = cls.objects.filter(
+            invoice_number__startswith=f"SHOP-INV-{today}"
+        ).order_by("-id").first()
+
+        if last_invoice:
+            try:
+                last_number = int(
+                    last_invoice.invoice_number.split("-")[-1]
+                )
+            except:
+                last_number = 0
+        else:
+            last_number = 0
+
+        return f"SHOP-INV-{today}-{last_number + 1:04d}"
+
+    @property
+    def subtotal(self):
+        return sum(
+            (
+                item.line_total
+                for item in self.items.all()
+            ),
+            Decimal("0.00")
+        )
+
+    @property
+    def tax_amount(self):
+        return (
+            self.subtotal * self.tax_percentage
+        ) / Decimal("100")
+
+    @property
+    def total_amount(self):
+        total = (
+            self.subtotal
+            + self.tax_amount
+            - self.discount_amount
+        )
+
+        return total if total > 0 else Decimal("0.00")
+
+    @property
+    def balance(self):
+        bal = self.total_amount - self.amount_paid
+        return bal if bal > 0 else Decimal("0.00")
+
+    def get_pdf_url(self):
+        return reverse(
+            "shop_invoice_pdf",
+            args=[self.pk]
+        )
+
+
+class ShopInvoiceItem(models.Model):
+    CATEGORY_CHOICES = [
+        ("LAPTOP", "Laptop"),
+        ("DESKTOP", "Desktop"),
+        ("PRINTER", "Printer"),
+        ("ACCESSORY", "Accessory"),
+        ("NETWORK", "Networking"),
+        ("CCTV", "CCTV"),
+        ("OTHER", "Other"),
+    ]
+
+    invoice = models.ForeignKey(
+        ShopInvoice,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    category = models.CharField(
+        max_length=30,
+        choices=CATEGORY_CHOICES,
+        default="OTHER"
+    )
+
+    product_name = models.CharField(
+        max_length=255
+    )
+
+    description = models.TextField(blank=True)
+
+    serial_number = models.CharField(
+        max_length=120,
+        blank=True
+    )
+
+    quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("1.00")
+    )
+
+    unit_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00")
+    )
+
+    warranty = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.product_name
+
+    @property
+    def line_total(self):
+        return self.quantity * self.unit_price
+
+    def clean(self):
+        if self.quantity <= 0:
+            raise ValidationError({
+                "quantity": "Quantity must be greater than zero."
+            })
+
+        if self.unit_price < 0:
+            raise ValidationError({
+                "unit_price": "Unit price cannot be negative."
+            })
+
+
+class ShopReceipt(models.Model):
+    PAYMENT_METHODS = [
+        ("CASH", "Cash"),
+        ("MOBILE", "Mobile Money"),
+        ("BANK", "Bank Transfer"),
+        ("CHEQUE", "Cheque"),
+    ]
+
+    receipt_number = models.CharField(
+        max_length=30,
+        unique=True,
+        blank=True
+    )
+
+    invoice = models.ForeignKey(
+        ShopInvoice,
+        on_delete=models.CASCADE,
+        related_name="receipts"
+    )
+
+    customer_name = models.CharField(
+        max_length=255
+    )
+
+    payment_date = models.DateField(
+        default=timezone.now
+    )
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHODS,
+        default="CASH"
+    )
+
+    reference_number = models.CharField(
+        max_length=120,
+        blank=True
+    )
+
+    amount_received = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00")
+    )
+
+    notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.receipt_number
+
+    def save(self, *args, **kwargs):
+        if not self.receipt_number:
+            self.receipt_number = self.generate_receipt_number()
+
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_receipt_number(cls):
+        today = timezone.now().strftime("%Y%m%d")
+
+        last_receipt = cls.objects.filter(
+            receipt_number__startswith=f"SHOP-RCT-{today}"
+        ).order_by("-id").first()
+
+        if last_receipt:
+            try:
+                last_number = int(
+                    last_receipt.receipt_number.split("-")[-1]
+                )
+            except:
+                last_number = 0
+        else:
+            last_number = 0
+
+        return f"SHOP-RCT-{today}-{last_number + 1:04d}"
+
+
+def update_shop_invoice_status(invoice):
+    total_paid = invoice.receipts.aggregate(
+        total=models.Sum("amount_received")
+    )["total"] or Decimal("0.00")
+
+    invoice.amount_paid = total_paid
+
+    if total_paid <= 0:
+        invoice.status = "PENDING"
+
+    elif total_paid >= invoice.total_amount:
+        invoice.status = "PAID"
+
+    else:
+        invoice.status = "PARTIAL"
+
+    invoice.save(
+        update_fields=[
+            "amount_paid",
+            "status"
+        ]
+    )
+
+
+@receiver(post_save, sender=ShopReceipt)
+def receipt_saved(sender, instance, **kwargs):
+    update_shop_invoice_status(instance.invoice)
+
+
+@receiver(post_delete, sender=ShopReceipt)
+def receipt_deleted(sender, instance, **kwargs):
+    update_shop_invoice_status(instance.invoice)

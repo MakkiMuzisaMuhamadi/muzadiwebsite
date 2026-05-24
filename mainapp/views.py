@@ -8,6 +8,8 @@ from .models import (
     IntroStatCard,
     Invoice,
     Service,
+    ShopInvoice,
+    ShopReceipt,
     SoftwareProduct,
     FeatureItem,
     PricingPlan,
@@ -94,4 +96,66 @@ def invoice_pdf_view(request, pk):
 
     response = HttpResponse(pdf_file, content_type="application/pdf")
     response["Content-Disposition"] = f'inline; filename="{invoice.invoice_number}.pdf"'
+    return response
+
+
+
+
+def shop_invoice_pdf(request, pk):
+    invoice = get_object_or_404(
+        ShopInvoice.objects.prefetch_related("items"),
+        pk=pk
+    )
+
+    html_string = render_to_string(
+        "shop/invoice_pdf.html",
+        {
+            "invoice": invoice,
+        }
+    )
+
+    pdf_file = HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri("/")
+    ).write_pdf()
+
+    response = HttpResponse(
+        pdf_file,
+        content_type="application/pdf"
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="{invoice.invoice_number}.pdf"'
+    )
+
+    return response
+
+
+def shop_receipt_pdf(request, pk):
+    receipt = get_object_or_404(
+        ShopReceipt.objects.select_related("invoice"),
+        pk=pk
+    )
+
+    html_string = render_to_string(
+        "shop/receipt_pdf.html",
+        {
+            "receipt": receipt,
+        }
+    )
+
+    pdf_file = HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri("/")
+    ).write_pdf()
+
+    response = HttpResponse(
+        pdf_file,
+        content_type="application/pdf"
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="{receipt.receipt_number}.pdf"'
+    )
+
     return response

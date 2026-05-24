@@ -1,0 +1,495 @@
+<!-- templates/shop/invoice_pdf.html -->
+
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ invoice.invoice_number }}</title>
+
+    <style>
+
+        @page{
+            size:A4;
+            margin:18mm;
+        }
+
+        body{
+            font-family:Arial, Helvetica, sans-serif;
+            color:#1e293b;
+            font-size:12px;
+            line-height:1.5;
+        }
+
+        *{
+            box-sizing:border-box;
+        }
+
+        .wrapper{
+            border:1px solid #dbe4ee;
+            border-radius:12px;
+            padding:24px;
+            background:#ffffff;
+        }
+
+        .top-line{
+            height:8px;
+            background:#2563eb;
+            border-radius:8px 8px 0 0;
+            margin:-24px -24px 24px -24px;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        .header td{
+            vertical-align:top;
+        }
+
+        .logo{
+            width:95px;
+            height:auto;
+            margin-bottom:10px;
+        }
+
+        .company-name{
+            font-size:30px;
+            font-weight:900;
+            color:#0f172a;
+            letter-spacing:1px;
+            margin-bottom:4px;
+        }
+
+        .tagline{
+            font-size:12px;
+            color:#2563eb;
+            font-weight:700;
+            margin-bottom:10px;
+        }
+
+        .company-meta{
+            color:#475569;
+            font-size:11px;
+            line-height:1.7;
+        }
+
+        .invoice-box{
+            text-align:right;
+        }
+
+        .invoice-box h1{
+            margin:0;
+            font-size:34px;
+            color:#0f172a;
+        }
+
+        .invoice-meta{
+            margin-top:10px;
+            font-size:12px;
+            color:#334155;
+        }
+
+        .status{
+            display:inline-block;
+            margin-top:10px;
+            padding:5px 12px;
+            border-radius:50px;
+            background:#dbeafe;
+            color:#1d4ed8;
+            font-size:10px;
+            font-weight:700;
+            text-transform:uppercase;
+        }
+
+        .section-space{
+            height:18px;
+        }
+
+        .box{
+            border:1px solid #e2e8f0;
+            border-radius:10px;
+            background:#f8fafc;
+            padding:14px;
+            min-height:110px;
+        }
+
+        .box-title{
+            font-size:10px;
+            text-transform:uppercase;
+            color:#64748b;
+            font-weight:700;
+            margin-bottom:8px;
+        }
+
+        .customer-name{
+            font-size:15px;
+            font-weight:700;
+            margin-bottom:5px;
+            color:#111827;
+        }
+
+        .items-table{
+            margin-top:10px;
+            border:1px solid #e2e8f0;
+        }
+
+        .items-table th{
+            background:#0f172a;
+            color:#ffffff;
+            padding:11px 8px;
+            font-size:11px;
+            text-align:left;
+        }
+
+        .items-table td{
+            padding:10px 8px;
+            border-bottom:1px solid #e2e8f0;
+            vertical-align:top;
+        }
+
+        .text-right{
+            text-align:right;
+        }
+
+        .product-name{
+            font-weight:700;
+            color:#0f172a;
+            margin-bottom:3px;
+        }
+
+        .product-meta{
+            font-size:11px;
+            color:#64748b;
+            line-height:1.5;
+        }
+
+        .summary{
+            width:42%;
+            margin-left:auto;
+            margin-top:16px;
+        }
+
+        .summary td{
+            padding:7px 0;
+        }
+
+        .summary .label{
+            color:#475569;
+        }
+
+        .summary .value{
+            text-align:right;
+            font-weight:700;
+        }
+
+        .grand-total td{
+            border-top:2px solid #cbd5e1;
+            padding-top:10px;
+            font-size:15px;
+            font-weight:900;
+            color:#0f172a;
+        }
+
+        .notes{
+            margin-top:18px;
+            border:1px solid #e2e8f0;
+            background:#f8fafc;
+            padding:14px;
+            border-radius:10px;
+        }
+
+        .notes h3{
+            margin-top:0;
+            margin-bottom:8px;
+            color:#0f172a;
+            font-size:13px;
+        }
+
+        .signature{
+            width:240px;
+            margin-left:auto;
+            margin-top:30px;
+            text-align:center;
+        }
+
+        .signature img{
+            max-width:180px;
+            max-height:80px;
+            margin-bottom:8px;
+        }
+
+        .signature-line{
+            border-top:1px solid #94a3b8;
+            padding-top:6px;
+            font-size:11px;
+            color:#475569;
+        }
+
+        .footer{
+            margin-top:28px;
+            border-top:1px solid #e2e8f0;
+            padding-top:12px;
+            text-align:center;
+            font-size:11px;
+            color:#64748b;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="wrapper">
+
+    <div class="top-line"></div>
+
+    <table class="header">
+        <tr>
+
+            <td style="width:65%;">
+
+                {% if company.logo %}
+                    <img src="{{ company.logo.url }}" class="logo">
+                {% endif %}
+
+                <div class="company-name">
+                    MUZADI TECHNOLOGIES
+                </div>
+
+                <div class="tagline">
+                    Computers • Laptops • Printers • Accessories • CCTV • Networking
+                </div>
+
+                <div class="company-meta">
+                    Suncity Plaza Kampala Road, Uganda<br>
+                    Tel: +256 767 597957<br>
+                    Email: info@muzaditechnologies.com<br>
+                    
+                </div>
+
+            </td>
+
+            <td style="width:35%;" class="invoice-box">
+
+                <h1>INVOICE</h1>
+
+                <div class="invoice-meta">
+                    <strong>Invoice No:</strong>
+                    {{ invoice.invoice_number }}<br>
+
+                    <strong>Date:</strong>
+                    {{ invoice.invoice_date|date:"d M Y" }}
+                </div>
+
+                <div class="status">
+                    {{ invoice.status }}
+                </div>
+
+            </td>
+
+        </tr>
+    </table>
+
+    <div class="section-space"></div>
+
+    <table>
+        <tr>
+
+            <td style="width:50%; padding-right:8px;">
+
+                <div class="box">
+
+                    <div class="box-title">
+                        Customer Information
+                    </div>
+
+                    <div class="customer-name">
+                        {{ invoice.customer_name }}
+                    </div>
+
+                    {% if invoice.customer_phone %}
+                        <div>{{ invoice.customer_phone }}</div>
+                    {% endif %}
+
+                    {% if invoice.customer_email %}
+                        <div>{{ invoice.customer_email }}</div>
+                    {% endif %}
+
+                    {% if invoice.customer_address %}
+                        <div>{{ invoice.customer_address }}</div>
+                    {% endif %}
+
+                </div>
+
+            </td>
+
+            <td style="width:50%; padding-left:8px;">
+
+                <div class="box">
+
+                    <div class="box-title">
+                        Payment Summary
+                    </div>
+
+                    <div>
+                        <strong>Currency:</strong>
+                        {{ invoice.currency }}
+                    </div>
+
+                    <div>
+                        <strong>Amount Paid:</strong>
+                        {{ invoice.currency }}
+                        {{ invoice.amount_paid|floatformat:0|intcomma }}
+                    </div>
+
+                    <div>
+                        <strong>Balance:</strong>
+                        {{ invoice.currency }}
+                        {{ invoice.balance|floatformat:0|intcomma }}
+                    </div>
+
+                </div>
+
+            </td>
+
+        </tr>
+    </table>
+
+    <div class="section-space"></div>
+
+    <table class="items-table">
+
+        <thead>
+
+            <tr>
+                <th style="width:45%;">Product</th>
+                <th style="width:15%;" class="text-right">Qty</th>
+                <th style="width:20%;" class="text-right">Unit Price</th>
+                <th style="width:20%;" class="text-right">Amount</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for item in invoice.items.all %}
+
+            <tr>
+
+                <td>
+
+                    <div class="product-name">
+                        {{ item.product_name }}
+                    </div>
+
+                    <div class="product-meta">
+
+                        {% if item.description %}
+                            {{ item.description }}<br>
+                        {% endif %}
+
+                        {% if item.serial_number %}
+                            Serial No: {{ item.serial_number }}<br>
+                        {% endif %}
+
+                        {% if item.warranty %}
+                            Warranty: {{ item.warranty }}
+                        {% endif %}
+
+                    </div>
+
+                </td>
+
+                <td class="text-right">
+                    {{ item.quantity|floatformat:0 }}
+                </td>
+
+                <td class="text-right">
+                    {{ invoice.currency }}
+                    {{ item.unit_price|floatformat:0|intcomma }}
+                </td>
+
+                <td class="text-right">
+                    {{ invoice.currency }}
+                    {{ item.line_total|floatformat:0|intcomma }}
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <table class="summary">
+
+        <tr>
+            <td class="label">Subtotal</td>
+
+            <td class="value">
+                {{ invoice.currency }}
+                {{ invoice.subtotal|floatformat:0|intcomma }}
+            </td>
+        </tr>
+
+        <tr>
+            <td class="label">Discount</td>
+
+            <td class="value">
+                - {{ invoice.currency }}
+                {{ invoice.discount_amount|floatformat:0|intcomma }}
+            </td>
+        </tr>
+
+        <tr class="grand-total">
+
+            <td>Total</td>
+
+            <td class="text-right">
+                {{ invoice.currency }}
+                {{ invoice.total_amount|floatformat:0|intcomma }}
+            </td>
+
+        </tr>
+
+    </table>
+
+    <div class="notes">
+
+        <h3>Terms & Conditions</h3>
+
+        1. Goods once sold are not returnable unless defective.<br>
+        2. Warranty does not cover physical damage or liquid damage.<br>
+        3. Full payment is required before delivery unless agreed otherwise.<br>
+        4. Software installation charges may apply separately.<br>
+        5. Thank you for shopping with Muzadi Technologies.
+
+    </div>
+
+    {% if company.authorized_signature %}
+    <div class="signature">
+
+        <img src="{{ company.authorized_signature.url }}">
+
+        <div class="signature-line">
+            Authorized Signature
+        </div>
+
+    </div>
+    {% endif %}
+
+    <div class="footer">
+
+        MUZADI TECHNOLOGIES<br>
+
+        Computers | Printers | Accessories | CCTV | Networking
+
+    </div>
+
+</div>
+
+</body>
+</html>
